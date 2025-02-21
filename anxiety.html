@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene>
+      <a-assets>
+        <img id="sky" src="blue_grotto.jpg">
+        <audio id="ambient" src="loop_music.m4a"></audio>
+        <audio id="inhale" src="https://freesound.org/data/previews/156/156030_2704162-lq.mp3"></audio>
+        <audio id="hold" src="https://freesound.org/data/previews/245/245366_2283446-lq.mp3"></audio>
+        <audio id="exhale" src="https://freesound.org/data/previews/219/219477_4062825-lq.mp3"></audio>
+      </a-assets>
+
+      <!-- Sky -->
+      <a-sky src="#sky"></a-sky>
+      
+      <!-- Ambient Sound -->
+      <a-entity sound="src: #ambient; autoplay: true; loop: true"></a-entity>
+      
+      <!-- Breathing Guide Box with 50% Opacity Black and White Border -->
+      <a-entity 
+        id="breathingBox" 
+        geometry="primitive: plane; height: 2; width: 2" 
+        material="color: #000000; shader: flat; transparent: true; opacity: 0.5" 
+        position="0 2 -3"
+      >
+        <!-- Thin white border plane (slightly larger) -->
+        <a-entity 
+          geometry="primitive: plane; height: 2.105; width: 2.105" 
+          material="color: white; shader: flat" 
+          position="0 0 -0.01"
+        ></a-entity>
+      </a-entity>
+      
+      <!-- Indicator Circle -->
+      <a-entity 
+        id="indicator" 
+        geometry="primitive: circle; radius: 0.1" 
+        material="color: white" 
+        position="1 3 -2.8"
+      ></a-entity>
+      
+      <!-- Text Instructions (Centered in Box) -->
+      <a-entity 
+        id="breathingText" 
+        position="0 2.5 -3" 
+        text="value: Breathe In; align: center; color: white; width: 5"
+      ></a-entity>
+      
+      <!-- Timer Display (Larger and Centered) -->
+      <a-entity 
+        id="timerText" 
+        position="0 2 -3" 
+        text="value: 6; align: center; color: white; width: 10; height: 10"
+      ></a-entity>
+      
+      <!-- Sound Effects -->
+      <a-entity id="inhaleSound" sound="src: #inhale"></a-entity>
+      <a-entity id="holdSound" sound="src: #hold"></a-entity>
+      <a-entity id="exhaleSound" sound="src: #exhale"></a-entity>
+
+      <!-- Camera with default movement controls -->
+      <a-camera position="0 1.6 0"></a-camera>
+    </a-scene>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const text = document.querySelector('#breathingText');
+        const timer = document.querySelector('#timerText');
+        const indicator = document.querySelector('#indicator');
+        const inhaleSound = document.querySelector('#inhaleSound');
+        const holdSound = document.querySelector('#holdSound');
+        const exhaleSound = document.querySelector('#exhaleSound');
+
+        const duration = 6000; // 6 seconds
+
+        function animateElement(element, property, from, to, dur) {
+          element.removeAttribute('animation');
+          element.setAttribute('animation', {
+            property: property,
+            from: from,
+            to: to,
+            dur: dur,
+            easing: 'linear',
+            autoplay: true
+          });
+        }
+
+        function updateTimer(seconds) {
+          timer.setAttribute('text', { value: seconds });
+        }
+
+        function startBreathingCycle() {
+          // Breathe In (right edge)
+          text.setAttribute('text', { value: 'Breathe In' });
+          inhaleSound.components.sound.playSound();
+          animateElement(indicator, 'position', '1 3 -3', '1 1 -2.8', duration);
+          let inhaleTime = 6;
+          updateTimer(inhaleTime);
+          const inhaleInterval = setInterval(() => {
+            inhaleTime--;
+            updateTimer(inhaleTime);
+            if (inhaleTime <= 0) clearInterval(inhaleInterval);
+          }, 1000);
+
+          setTimeout(() => {
+            // Hold (bottom edge)
+            text.setAttribute('text', { value: 'Hold' });
+            holdSound.components.sound.playSound();
+            animateElement(indicator, 'position', '1 1 -3', '-1 1 -2.8', duration);
+            let holdTime1 = 6;
+            updateTimer(holdTime1);
+            const holdInterval1 = setInterval(() => {
+              holdTime1--;
+              updateTimer(holdTime1);
+              if (holdTime1 <= 0) clearInterval(holdInterval1);
+            }, 1000);
+
+            setTimeout(() => {
+              // Breathe Out (left edge)
+              text.setAttribute('text', { value: 'Breathe Out' });
+              exhaleSound.components.sound.playSound();
+              animateElement(indicator, 'position', '-1 1 -3', '-1 3 -2.8', duration);
+              let exhaleTime = 6;
+              updateTimer(exhaleTime);
+              const exhaleInterval = setInterval(() => {
+                exhaleTime--;
+                updateTimer(exhaleTime);
+                if (exhaleTime <= 0) clearInterval(exhaleInterval);
+              }, 1000);
+
+              setTimeout(() => {
+                // Hold (top edge)
+                text.setAttribute('text', { value: 'Hold' });
+                holdSound.components.sound.playSound();
+                animateElement(indicator, 'position', '-1 3 -3', '1 3 -2.8', duration);
+                let holdTime2 = 6;
+                updateTimer(holdTime2);
+                const holdInterval2 = setInterval(() => {
+                  holdTime2--;
+                  updateTimer(holdTime2);
+                  if (holdTime2 <= 0) clearInterval(holdInterval2);
+                }, 1000);
+
+                setTimeout(startBreathingCycle, duration + 100);
+              }, duration);
+            }, duration);
+          }, duration);
+        }
+
+        const scene = document.querySelector('a-scene');
+        scene.addEventListener('loaded', () => {
+          startBreathingCycle();
+        });
+      });
+    </script>
+  </body>
+</html>
